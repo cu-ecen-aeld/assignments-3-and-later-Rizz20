@@ -8,7 +8,13 @@ set -u
 NUMFILES=10
 WRITESTR=AELD_IS_FUN
 WRITEDIR=/tmp/aeld-data
-username=$(cat conf/username.txt)
+if [ -f /etc/finder-app/conf/username.txt ]; then
+	username=$(cat /etc/finder-app/conf/username.txt)
+elif [ -f conf/username.txt ]; then
+	username=$(cat conf/username.txt)
+else
+	username=$(cat ../conf/username.txt)
+fi
 
 if [ $# -lt 3 ]
 then
@@ -32,7 +38,13 @@ echo "Writing ${NUMFILES} files containing string ${WRITESTR} to ${WRITEDIR}"
 rm -rf "${WRITEDIR}"
 
 # create $WRITEDIR if not assignment1
-assignment=`cat ../conf/assignment.txt`
+if [ -f /etc/finder-app/conf/assignment.txt ]; then
+	assignment=$(cat /etc/finder-app/conf/assignment.txt)
+elif [ -f ../conf/assignment.txt ]; then
+	assignment=$(cat ../conf/assignment.txt)
+else
+	assignment=$(cat conf/assignment.txt)
+fi
 
 if [ $assignment != 'assignment1' ]
 then
@@ -49,12 +61,27 @@ then
 	fi
 fi
 
+if command -v writer >/dev/null 2>&1; then
+	WRITER_BIN=writer
+else
+	WRITER_BIN=./writer
+fi
+
+if command -v finder.sh >/dev/null 2>&1; then
+	FINDER_SH=finder.sh
+else
+	FINDER_SH=./finder.sh
+fi
+
 for i in $( seq 1 $NUMFILES)
 do
-	./writer "$WRITEDIR/${username}$i.txt" "$WRITESTR"
+	${WRITER_BIN} "$WRITEDIR/${username}$i.txt" "$WRITESTR"
 done
 
-OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
+OUTPUTSTRING=$(${FINDER_SH} "$WRITEDIR" "$WRITESTR")
+
+# Write output of finder command to /tmp/assignment4-result.txt
+echo "${OUTPUTSTRING}" > /tmp/assignment4-result.txt
 
 # remove temporary directories
 rm -rf /tmp/aeld-data

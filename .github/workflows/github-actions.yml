@@ -1,12 +1,17 @@
 name: assignment-test
-on: [push]
+on:
+    push:
+        tags-ignore:
+            - '*'
+        branches:
+            - '*'
 jobs:
-    full-test:
-        container: cuaesd/aesd-autotest:24-assignment2
+    unit-test:
+        container: cuaesd/aesd-autotest:24-unit-test
         runs-on: ubuntu-latest
         steps:
           - uses: actions/checkout@v2
           - name: Checkout submodules
             run : git submodule update --init --recursive
-          - name: Run test
-            run: ./test.sh
+          - name: Run unit test
+            run: ./unit-test.sh

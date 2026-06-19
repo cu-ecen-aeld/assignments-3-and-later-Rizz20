@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
         daemon_mode = 1;
     }
 
+    remove(DATA_FILE);
+
     openlog("aesdsocket", LOG_PID, LOG_USER);
 
     struct sigaction sa;
@@ -186,6 +188,7 @@ int main(int argc, char *argv[]) {
                     lseek(data_fd, 0, SEEK_SET);
                     char read_buf[BUFFER_SIZE];
                     ssize_t bytes_read;
+                    int send_error = 0;
                     while ((bytes_read = read(data_fd, read_buf, BUFFER_SIZE)) > 0) {
                         ssize_t sent = 0;
                         while (sent < bytes_read) {
@@ -193,10 +196,15 @@ int main(int argc, char *argv[]) {
                             if (n == -1) {
                                 if (errno == EINTR) continue;
                                 syslog(LOG_ERR, "send failed: %s", strerror(errno));
+                                send_error = 1;
                                 break;
                             }
                             sent += n;
                         }
+                        if (send_error) break;
+                    }
+                    if (bytes_read == -1) {
+                        syslog(LOG_ERR, "read failed: %s", strerror(errno));
                     }
                     
                     packet_size = 0;

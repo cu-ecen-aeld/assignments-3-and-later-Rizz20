@@ -7,11 +7,11 @@ all: $(TARGET)
 
 default: $(TARGET)
 
-$(TARGET): $(TARGET).o
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
 $(TARGET).o: $(TARGET).c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+$(TARGET): $(TARGET).o
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -pthread -lrt
 
 clean:
 	rm -f $(TARGET) *.o

@@ -18,7 +18,15 @@
 #include <sys/time.h>
 
 #define PORT "9000"
+#ifndef USE_AESD_CHAR_DEVICE
+#define USE_AESD_CHAR_DEVICE 1
+#endif
+
+#if USE_AESD_CHAR_DEVICE
+#define DATA_FILE "/dev/aesdchar"
+#else
 #define DATA_FILE "/var/tmp/aesdsocketdata"
+#endif
 #define BUFFER_SIZE 1024
 
 int server_fd = -1;
@@ -194,7 +202,9 @@ int main(int argc, char *argv[]) {
         daemon_mode = 1;
     }
 
+#if !USE_AESD_CHAR_DEVICE
     remove(DATA_FILE);
+#endif
 
     openlog("aesdsocket", LOG_PID, LOG_USER);
 
@@ -277,10 +287,12 @@ int main(int argc, char *argv[]) {
 
     SLIST_INIT(&head);
 
+#if !USE_AESD_CHAR_DEVICE
     pthread_t timer_thread;
     if (pthread_create(&timer_thread, NULL, timer_thread_func, NULL) != 0) {
         syslog(LOG_ERR, "pthread_create failed for timer_thread");
     }
+#endif
 
     while (!caught_sig) {
         struct sockaddr_in client_addr;
@@ -339,9 +351,10 @@ int main(int argc, char *argv[]) {
         current = next;
     }
     
+#if !USE_AESD_CHAR_DEVICE
     pthread_join(timer_thread, NULL);
-    
     remove(DATA_FILE);
+#endif
     closelog();
     pthread_mutex_destroy(&aesddata_mutex);
     return 0;

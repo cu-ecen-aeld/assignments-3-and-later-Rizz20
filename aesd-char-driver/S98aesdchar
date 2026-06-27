@@ -1,0 +1,15 @@
+#!/bin/sh
+
+case "$1" in
+    start)
+        echo "Starting aesdchar driver"
+        /usr/bin/aesdchar_load
+        ;;
+    stop)
+        echo "Stopping aesdchar driver"
+        /usr/bin/aesdchar_unload
+        ;;
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+esac

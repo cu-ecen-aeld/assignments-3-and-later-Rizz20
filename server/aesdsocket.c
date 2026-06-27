@@ -16,6 +16,8 @@
 #include <sys/queue.h>
 #include <time.h>
 #include <sys/time.h>
+#include <sys/ioctl.h>
+#include "../aesd-char-driver/aesd_ioctl.h"
 
 #define PORT "9000"
 #ifndef USE_AESD_CHAR_DEVICE
@@ -149,11 +151,25 @@ void* client_thread_func(void* thread_param) {
                     continue;
                 }
 
-                if (write(data_fd, packet, packet_size) == -1) {
-                    syslog(LOG_ERR, "write failed: %s", strerror(errno));
+                const char *ioctl_prefix = "AESDCHAR_IOCSEEKTO:";
+                if (strncmp(packet, ioctl_prefix, strlen(ioctl_prefix)) == 0) {
+                    struct aesd_seekto seekto;
+                    if (sscanf(packet + strlen(ioctl_prefix), "%u,%u", &seekto.write_cmd, &seekto.write_cmd_offset) == 2) {
+                        if (ioctl(data_fd, AESDCHAR_IOCSEEKTO, &seekto) == -1) {
+                            syslog(LOG_ERR, "ioctl failed: %s", strerror(errno));
+                        }
+                    } else {
+                        if (write(data_fd, packet, packet_size) == -1) {
+                            syslog(LOG_ERR, "write failed: %s", strerror(errno));
+                        }
+                        lseek(data_fd, 0, SEEK_SET);
+                    }
+                } else {
+                    if (write(data_fd, packet, packet_size) == -1) {
+                        syslog(LOG_ERR, "write failed: %s", strerror(errno));
+                    }
+                    lseek(data_fd, 0, SEEK_SET);
                 }
-                
-                lseek(data_fd, 0, SEEK_SET);
                 char read_buf[BUFFER_SIZE];
                 ssize_t bytes_read;
                 int send_error = 0;
